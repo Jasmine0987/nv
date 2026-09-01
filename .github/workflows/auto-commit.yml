@@ -1,10 +1,8 @@
 name: Daily Auto Commits
-
 on:
   schedule:
     - cron: '17 4 * * *'
   workflow_dispatch:
-
 jobs:
   auto-commit:
     runs-on: ubuntu-latest
@@ -13,24 +11,30 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Configure git
         run: |
           git config --global user.name "yourusername"
           git config --global user.email "89407304+Jasmine0987@users.noreply.github.com"
-
-      - name: Make 20 commits
+      - name: Make random number of commits
         run: |
           mkdir -p daily-log
-          for i in $(seq 1 20); do
+          # Random number of commits between 15 and 30
+          COMMIT_COUNT=$(( (RANDOM % 16) + 15 ))
+          echo "Making $COMMIT_COUNT commits today"
+
+          for i in $(seq 1 $COMMIT_COUNT); do
             QUOTE=$(curl -s https://api.quotable.io/random | jq -r '.content + " — " + .author' 2>/dev/null)
             if [ -z "$QUOTE" ] || [ "$QUOTE" == "null — null" ]; then
               QUOTE="Entry $i — $(date -u +"%Y-%m-%d %H:%M:%S")"
             fi
             echo "$(date -u +"%Y-%m-%d %H:%M:%S") | $QUOTE" >> daily-log/$(date -u +"%Y-%m-%d").md
             git add daily-log/
+
+            # Random delay between commits (0–120 seconds)
+            SLEEP_TIME=$(( RANDOM % 120 ))
+            sleep $SLEEP_TIME
+
             git commit -m "log: entry $i for $(date -u +"%Y-%m-%d")"
           done
-
       - name: Push all commits
         run: git push
